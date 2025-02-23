@@ -61,9 +61,12 @@ import androidx.core.content.ContextCompat
 import com.example.project3.facedetector.FaceDetectorProcessor
 import com.example.project3.facedetector.FaceGraphic
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.demo.kotlin.facemeshdetector.FaceMeshDetectorProcessor
+import com.google.mlkit.vision.demo.kotlin.facemeshdetector.FaceMeshGraphic
 import com.google.mlkit.vision.face.Face
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
+import com.google.mlkit.vision.facemesh.FaceMesh
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -92,13 +95,21 @@ class MainActivity : ComponentActivity() {
                 //declared class with face detection info
                 var faceDetectorProcessor = FaceDetectorProcessor()
 
+                var faceMeshProcessor = FaceMeshDetectorProcessor()
+
                 var detectedFaces by remember { mutableStateOf(emptyList<Face>()) }
+
+                var detectedFacesMesh by remember { mutableStateOf(emptyList<FaceMesh>())}
 
 
                 //when an image is captured, launch detection code
                 LaunchedEffect(capturedImage.value) {
                     capturedImage.value?.let { bitmap ->
                         detectedFaces = faceDetectorProcessor.detectInImage(bitmap)
+                    }
+
+                    capturedImage.value?.let { bitmap ->
+                        detectedFacesMesh = faceMeshProcessor.detectInImageMesh(bitmap)
                     }
                 }
 
@@ -130,7 +141,7 @@ class MainActivity : ComponentActivity() {
                             )
 
                             //if a picture has been taken
-                            if(detectedFaces.isNotEmpty()){
+                            if(detectedFaces.isNotEmpty() && detectedFacesMesh.isNotEmpty()){
                                 Log.d("Test", "Attempted to Draw Graphic")
 
                                 //draws specific face graphic on canvas
@@ -139,8 +150,13 @@ class MainActivity : ComponentActivity() {
                                     val f = FaceGraphic(detectedFaces[0], capturedImage.value!!.width,size.width )
                                     f.draw(drawContext.canvas.nativeCanvas)
 
+                                    val g = FaceMeshGraphic(detectedFacesMesh[0], capturedImage.value!!.width,size.width)
+                                    g.draw(drawContext.canvas.nativeCanvas)
+
                                 }
                             }
+
+
                         //live camera
                         }else{
                             CameraPreview(
