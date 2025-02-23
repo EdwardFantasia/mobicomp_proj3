@@ -31,10 +31,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,11 +46,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -149,11 +155,13 @@ class MainActivity : ComponentActivity() {
                     }
 
                     Spacer(modifier = Modifier
-                        .height(10.dp)
+                        .height(50.dp)
                     )
 
                     Button(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .width(400.dp)
+                            .padding(vertical = 8.dp),
                         onClick = {
                             takePhoto(controller = controller, onPhotoTaken = { bitmap ->
                                 capturedImage.value = bitmap
@@ -161,11 +169,11 @@ class MainActivity : ComponentActivity() {
                         },
                         shape = RoundedCornerShape(1.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Blue,
+                            containerColor = Color(0xff9910e3),
                             contentColor = Color.White
                         )
                     ){
-                        Text("Take a picture", fontSize = 16.sp)
+                        Text("Take a picture", fontSize = 20.sp)
                     }
                     Spacer(modifier = Modifier
                         .height(10.dp)
@@ -179,15 +187,18 @@ class MainActivity : ComponentActivity() {
                     ){
                         RadioButton(
                             selected = ("none" == selected),
-                            onClick = {setSelected("none")}
+                            onClick = {setSelected("none")},
+                            modifier = Modifier.scale(1.5f)
                         )
                         Text(
                             modifier = Modifier.padding(start = 16.dp),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
                             text = "None")
                     }
 
                     Spacer(modifier = Modifier
-                        .height(10.dp)
+                        .height(5.dp)
                     )
                     Row(
                         modifier = Modifier
@@ -198,14 +209,17 @@ class MainActivity : ComponentActivity() {
                     ){
                         RadioButton(
                             selected = ("fd" == selected),
-                            onClick = {setSelected("fd")}
+                            onClick = {setSelected("fd")},
+                            modifier = Modifier.scale(1.5f)
                         )
                         Text(
                             modifier = Modifier.padding(start = 16.dp),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
                             text = "Face detection")
                     }
                     Spacer(modifier = Modifier
-                        .height(10.dp)
+                        .height(5.dp)
                     )
                     Row(
                         modifier = Modifier
@@ -216,15 +230,18 @@ class MainActivity : ComponentActivity() {
                     ){
                         RadioButton(
                             selected = ("cd" == selected),
-                            onClick = {setSelected("cd")}
+                            onClick = {setSelected("cd")},
+                            modifier = Modifier.scale(1.5f)
                         )
                         Text(
                             modifier = Modifier.padding(start = 16.dp),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
                             text = "Contour detection")
                     }
 
                     Spacer(modifier = Modifier
-                        .height(10.dp)
+                        .height(5.dp)
                     )
                     Row(
                         modifier = Modifier
@@ -235,15 +252,18 @@ class MainActivity : ComponentActivity() {
                     ){
                         RadioButton(
                             selected = ("md" == selected),
-                            onClick = {setSelected("md")}
+                            onClick = {setSelected("md")},
+                            modifier = Modifier.scale(1.5f)
                         )
                         Text(
                             modifier = Modifier.padding(start = 16.dp),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
                             text = "Mesh detection")
                     }
 
                     Spacer(modifier = Modifier
-                        .height(10.dp)
+                        .height(5.dp)
                     )
                     Row(
                         modifier = Modifier
@@ -254,10 +274,13 @@ class MainActivity : ComponentActivity() {
                     ){
                         RadioButton(
                             selected = ("ss" == selected),
-                            onClick = {setSelected("ss")}
+                            onClick = {setSelected("ss")},
+                            modifier = Modifier.scale(1.5f)
                         )
                         Text(
                             modifier = Modifier.padding(start = 16.dp),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
                             text = "Selfie segmentation")
                     }
                 }
