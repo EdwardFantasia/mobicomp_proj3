@@ -217,6 +217,11 @@ class MainActivity : ComponentActivity() {
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             text = "Face detection")
+                        Text(
+                            modifier = Modifier.padding(start = 16.dp),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            text = "${detectedFaces.size} face detected")
                     }
                     Spacer(modifier = Modifier
                         .height(5.dp)
