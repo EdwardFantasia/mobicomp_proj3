@@ -3,19 +3,17 @@ package com.example.project3
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import com.example.project3.ui.theme.Project3Theme
 import android.Manifest
-import android.app.Activity
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Paint
+import android.graphics.Rect
 import android.util.Log
 import androidx.camera.core.ImageCapture.OnImageCapturedCallback
 import androidx.camera.core.ImageCaptureException
@@ -23,6 +21,7 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,12 +35,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.RadioButton
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
@@ -49,7 +52,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.Lifecycle
+import com.example.project3.facedetector.FaceDetectorProcessor
+import com.example.project3.facedetector.FaceGraphic
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.face.Face
+import com.google.mlkit.vision.face.FaceDetection
+import com.google.mlkit.vision.face.FaceDetectorOptions
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,6 +83,23 @@ class MainActivity : ComponentActivity() {
 
                 var (selected, setSelected) = remember { mutableStateOf("") }
 
+                //declared class with face detection info
+                var faceDetectorProcessor = FaceDetectorProcessor()
+
+                var detectedFaces by remember { mutableStateOf(emptyList<Face>()) }
+
+
+                //when an image is captured, launch detection code
+                LaunchedEffect(capturedImage.value) {
+                    capturedImage.value?.let { bitmap ->
+                        detectedFaces = faceDetectorProcessor.detectInImage(bitmap)
+                    }
+                }
+
+
+
+                Log.d("Test", "It has begun")
+
                 Column(
                     modifier = Modifier
                         .padding(PaddingValues()),
@@ -88,6 +113,7 @@ class MainActivity : ComponentActivity() {
                         contentAlignment = Alignment.Center
                     ){
                         if(capturedImage.value != null){
+                            Log.d("Test", "Hello!!!!")
                             Image(
                                 bitmap = capturedImage.value!!.asImageBitmap(),
                                 contentDescription = "Captured Photo",
@@ -96,6 +122,20 @@ class MainActivity : ComponentActivity() {
                                     .clip(RoundedCornerShape(2.dp)),
                                 contentScale = ContentScale.Crop
                             )
+
+                            //if a picture has been taken
+                            if(detectedFaces.isNotEmpty()){
+                                Log.d("Test", "Attempted to Draw Graphic")
+
+                                //draws specific face graphic on canvas
+                                //TODO: fix incorrect scaling/misplacement
+                                Canvas(modifier = Modifier.fillMaxSize()) {
+                                    val f = FaceGraphic(detectedFaces[0], capturedImage.value!!.width,size.width )
+                                    f.draw(drawContext.canvas.nativeCanvas)
+
+                                }
+                            }
+                        //live camera
                         }else{
                             CameraPreview(
                                 controller = controller,
@@ -103,6 +143,8 @@ class MainActivity : ComponentActivity() {
                                     .fillMaxSize()
                                     .height(500.dp)
                             )
+
+
                         }
                     }
 
@@ -112,7 +154,11 @@ class MainActivity : ComponentActivity() {
 
                     Button(
                         modifier = Modifier.fillMaxWidth(),
-                        onClick = {takePhoto(controller = controller, onPhotoTaken = {bitmap -> capturedImage.value = bitmap} )},
+                        onClick = {
+                            takePhoto(controller = controller, onPhotoTaken = { bitmap ->
+                                capturedImage.value = bitmap
+                            })
+                        },
                         shape = RoundedCornerShape(1.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color.Blue,
