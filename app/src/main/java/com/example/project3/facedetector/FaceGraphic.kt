@@ -259,7 +259,7 @@ class FaceGraphic(private val face: Face, private val imageWidth: Int, private v
   // 3. Translate Y - Converts the Y coordinate from image to canvas.
   private fun translateY(y: Float): Float {
     // Scale the Y value based on the canvas size
-    return scale(y)
+    return scale(y) - 100
   }
 
 
