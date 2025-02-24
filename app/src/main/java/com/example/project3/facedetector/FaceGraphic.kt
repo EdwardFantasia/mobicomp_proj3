@@ -21,6 +21,7 @@ class FaceGraphic(private val face: Face, private val imageWidth: Int, private v
   private val idPaints = Array(numColors) { Paint() }
   private val boxPaints = Array(numColors) { Paint() }
   private val labelPaints = Array(numColors) { Paint() }
+  private var drawBoolean = false
 
   init {
     val selectedColor = Color.WHITE
@@ -132,15 +133,16 @@ class FaceGraphic(private val face: Face, private val imageWidth: Int, private v
     }
 
     // Draws all face contours.
-
-    for (contour in face.allContours) {
-      for (point in contour.points) {
-        canvas.drawCircle(
-          translateX(point.x),
-          translateY(point.y),
-          FACE_POSITION_RADIUS,
-          facePositionPaint
-        )
+    if(drawBoolean == true) {
+      for (contour in face.allContours) {
+        for (point in contour.points) {
+          canvas.drawCircle(
+            translateX(point.x),
+            translateY(point.y),
+            FACE_POSITION_RADIUS,
+            facePositionPaint
+          )
+        }
       }
     }
 
@@ -217,11 +219,17 @@ class FaceGraphic(private val face: Face, private val imageWidth: Int, private v
     yLabelOffset += lineHeight
     canvas.drawText("EulerZ: " + face.headEulerAngleZ, left, top + yLabelOffset, idPaints[colorID])
 
-    // Draw facial landmarks
-    drawFaceLandmark(canvas, FaceLandmark.LEFT_EYE)
-    drawFaceLandmark(canvas, FaceLandmark.RIGHT_EYE)
-    drawFaceLandmark(canvas, FaceLandmark.LEFT_CHEEK)
-    drawFaceLandmark(canvas, FaceLandmark.RIGHT_CHEEK)
+    if(drawBoolean == true){
+      // Draw facial landmarks
+      drawFaceLandmark(canvas, FaceLandmark.LEFT_EYE)
+      drawFaceLandmark(canvas, FaceLandmark.RIGHT_EYE)
+      drawFaceLandmark(canvas, FaceLandmark.LEFT_CHEEK)
+      drawFaceLandmark(canvas, FaceLandmark.RIGHT_CHEEK)
+    }
+  }
+
+  public fun setDrawBool(boolean: Boolean): Unit{
+    drawBoolean = boolean
   }
 
   private fun drawFaceLandmark(canvas: Canvas, @LandmarkType landmarkType: Int) {

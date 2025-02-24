@@ -101,6 +101,8 @@ class MainActivity : ComponentActivity() {
 
                 var detectedFacesMesh by remember { mutableStateOf(emptyList<FaceMesh>())}
 
+                var (rememberBool, setRememberBool) = remember { mutableStateOf(false) }
+
 
                 //when an image is captured, launch detection code
                 LaunchedEffect(capturedImage.value) {
@@ -147,12 +149,25 @@ class MainActivity : ComponentActivity() {
                                 //draws specific face graphic on canvas
                                 //TODO: fix incorrect scaling/misplacement
                                 Canvas(modifier = Modifier.fillMaxSize()) {
-                                    val f = FaceGraphic(detectedFaces[0], capturedImage.value!!.width,size.width )
-                                    f.draw(drawContext.canvas.nativeCanvas)
+                                    if(selected != "none" || selected != "") {
+                                        if (selected == "cd") {
+                                            setRememberBool(true)
+                                        } else {
+                                            setRememberBool(false)
+                                        }
+                                        val f = FaceGraphic(
+                                            detectedFaces[0],
+                                            capturedImage.value!!.width,
+                                            size.width
+                                        )
+                                        f.setDrawBool(rememberBool)
+                                        f.draw(drawContext.canvas.nativeCanvas)
 
-                                    val g = FaceMeshGraphic(detectedFacesMesh[0], capturedImage.value!!.width,size.width)
-                                    g.draw(drawContext.canvas.nativeCanvas)
-
+                                        if(selected == "md") {
+                                            val g = FaceMeshGraphic(detectedFacesMesh[0], capturedImage.value!!.width,size.width)
+                                            g.draw(drawContext.canvas.nativeCanvas)
+                                        }
+                                    }
                                 }
                             }
 
@@ -203,7 +218,7 @@ class MainActivity : ComponentActivity() {
                     ){
                         RadioButton(
                             selected = ("none" == selected),
-                            onClick = {setSelected("none")},
+                            onClick = { detectedFaces = emptyList(); setSelected("none");},
                             modifier = Modifier.scale(1.5f)
                         )
                         Text(
@@ -225,7 +240,7 @@ class MainActivity : ComponentActivity() {
                     ){
                         RadioButton(
                             selected = ("fd" == selected),
-                            onClick = {setSelected("fd")},
+                            onClick = {setSelected("fd"); },
                             modifier = Modifier.scale(1.5f)
                         )
                         Text(
