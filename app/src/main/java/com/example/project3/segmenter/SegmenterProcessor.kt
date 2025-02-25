@@ -34,8 +34,8 @@ class SegmenterProcessor(context: Context, isStreamMode: Boolean) {
   init {
     val options = SelfieSegmenterOptions.Builder()
       .setDetectorMode(
-        if (isStreamMode) SelfieSegmenterOptions.STREAM_MODE
-        else SelfieSegmenterOptions.SINGLE_IMAGE_MODE
+        if (isStreamMode) {SelfieSegmenterOptions.STREAM_MODE}
+        else {SelfieSegmenterOptions.SINGLE_IMAGE_MODE}
       )
       .build()
 

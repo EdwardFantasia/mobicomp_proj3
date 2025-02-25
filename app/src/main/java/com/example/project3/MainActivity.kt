@@ -126,7 +126,10 @@ class MainActivity : ComponentActivity() {
                         detectedFacesMesh = faceMeshProcessor.detectInImageMesh(bitmap)
 
                         // Detect segmentation mask
-                        val inputImage = InputImage.fromBitmap(bitmap, 0) // 0 for rotation, adjust if needed
+                        //Resize bitmap to improve performance of segmentation process
+                        val resizedBitmap = resizeBitmap(bitmap, 200, 200) // Adjust the size as needed
+                        val inputImage = InputImage.fromBitmap(resizedBitmap, 0)
+
                         faceSegmentationProcessor.detectInImage(inputImage)
                             .addOnSuccessListener { segmentationMask ->
                                 detectedSegmentationMask = segmentationMask // Update the state with the segmentation mask
@@ -217,6 +220,7 @@ class MainActivity : ComponentActivity() {
                                             g.draw(drawContext.canvas.nativeCanvas)
                                         }
                                         if (selected == "ss" && detectedSegmentationMask != null) {
+
                                             val segmentationGraphic = SegmentationGraphic(
                                                 detectedSegmentationMask!!,
                                                 capturedImage.value!!.width,  // Pass image width
@@ -407,11 +411,14 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+    fun resizeBitmap(original: Bitmap, targetWidth: Int, targetHeight: Int): Bitmap {
+        return Bitmap.createScaledBitmap(original, targetWidth, targetHeight, true)
+    }
 
     private fun takePhoto(
         controller: LifecycleCameraController,
         onPhotoTaken: (Bitmap) -> Unit
-    ){
+    ) {
         controller.takePicture(
             ContextCompat.getMainExecutor(applicationContext), object : OnImageCapturedCallback() {
                 override fun onCaptureSuccess(image: ImageProxy) {
@@ -421,21 +428,31 @@ class MainActivity : ComponentActivity() {
 
                     val originalBitmap = image.toBitmap()
 
-                    val matrix = android.graphics.Matrix().apply{
-                        postRotate(rotationDegrees.toFloat())
+                    // Create a matrix to apply rotation and horizontal flip
+                    val matrix = android.graphics.Matrix().apply {
+                        postRotate(rotationDegrees.toFloat()) // Rotate the image to match device orientation
+                        postScale(-1f, 1f) // Apply horizontal flip for front camera
                     }
 
-                    val rotatedBitmap = Bitmap.createBitmap(originalBitmap, 0, 0, originalBitmap.width, originalBitmap.height, matrix, true)
+                    // Create the final bitmap with rotation and flip applied
+                    val correctedBitmap = Bitmap.createBitmap(
+                        originalBitmap,
+                        0,
+                        0,
+                        originalBitmap.width,
+                        originalBitmap.height,
+                        matrix,
+                        true
+                    )
 
                     image.close()
-                    onPhotoTaken(rotatedBitmap)
+                    onPhotoTaken(correctedBitmap) // Pass the corrected bitmap to the callback
                 }
 
                 override fun onError(exception: ImageCaptureException) {
                     super.onError(exception)
                     Log.e("Camera: ", "Couldn't take picture", exception)
                 }
-
             }
         )
     }
