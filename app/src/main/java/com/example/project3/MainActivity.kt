@@ -15,6 +15,7 @@ import android.graphics.Bitmap
 import android.graphics.Paint
 import android.graphics.Rect
 import android.util.Log
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture.OnImageCapturedCallback
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
@@ -32,7 +33,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.RadioButton
@@ -63,10 +66,13 @@ import com.example.project3.facedetector.FaceGraphic
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.demo.kotlin.facemeshdetector.FaceMeshDetectorProcessor
 import com.google.mlkit.vision.demo.kotlin.facemeshdetector.FaceMeshGraphic
+import com.google.mlkit.vision.demo.kotlin.segmenter.SegmenterProcessor
+import com.google.mlkit.vision.demo.kotlin.segmenter.SegmentationGraphic
 import com.google.mlkit.vision.face.Face
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import com.google.mlkit.vision.facemesh.FaceMesh
+import com.google.mlkit.vision.segmentation.SegmentationMask
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,6 +89,7 @@ class MainActivity : ComponentActivity() {
                         setEnabledUseCases(
                             CameraController.IMAGE_CAPTURE
                         )
+                        cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
                     }
                 }
 
@@ -97,23 +104,39 @@ class MainActivity : ComponentActivity() {
 
                 var faceMeshProcessor = FaceMeshDetectorProcessor()
 
+                var faceSegmentationProcessor = SegmenterProcessor(this, true)
+
                 var detectedFaces by remember { mutableStateOf(emptyList<Face>()) }
 
                 var detectedFacesMesh by remember { mutableStateOf(emptyList<FaceMesh>())}
 
-                var (rememberBool, setRememberBool) = remember { mutableStateOf(false) }
+                var detectedSegmentationMask by remember { mutableStateOf<SegmentationMask?>(null) }
 
+
+                var (rememberBool, setRememberBool) = remember { mutableStateOf(false) }
+                val scrollState = rememberScrollState()
 
                 //when an image is captured, launch detection code
                 LaunchedEffect(capturedImage.value) {
                     capturedImage.value?.let { bitmap ->
+                        // Detect faces
                         detectedFaces = faceDetectorProcessor.detectInImage(bitmap)
-                    }
 
-                    capturedImage.value?.let { bitmap ->
+                        // Detect face mesh
                         detectedFacesMesh = faceMeshProcessor.detectInImageMesh(bitmap)
+
+                        // Detect segmentation mask
+                        val inputImage = InputImage.fromBitmap(bitmap, 0) // 0 for rotation, adjust if needed
+                        faceSegmentationProcessor.detectInImage(inputImage)
+                            .addOnSuccessListener { segmentationMask ->
+                                detectedSegmentationMask = segmentationMask // Update the state with the segmentation mask
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e("SegmenterProcessor", "Segmentation failed", e)
+                            }
                     }
                 }
+
 
 
 
@@ -121,11 +144,14 @@ class MainActivity : ComponentActivity() {
 
                 Column(
                     modifier = Modifier
-                        .padding(PaddingValues()),
+                        .padding(PaddingValues())
+                        .verticalScroll(scrollState),
+
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.SpaceEvenly
+
                 ){
-                    Box(
+                    Box(//This box is where the segmentationgraphic should be filled
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(500.dp),
@@ -148,31 +174,67 @@ class MainActivity : ComponentActivity() {
 
                                 //draws specific face graphic on canvas
                                 //TODO: fix incorrect scaling/misplacement
-                                Canvas(modifier = Modifier.fillMaxSize()) {
+                                Canvas(modifier = Modifier
+                                    .fillMaxSize()
+                                    .height(500.dp)
+                                ) {
                                     if(selected != "none" || selected != "") {
                                         if (selected == "cd") {
                                             setRememberBool(true)
+                                            val f = FaceGraphic(
+                                                detectedFaces[0],
+                                                capturedImage.value!!.width,
+                                                capturedImage.value!!.height,
+                                                size.width,
+                                                size.height
+                                            )
+                                            f.setDrawBool(rememberBool)
+                                            f.draw(drawContext.canvas.nativeCanvas)
                                         } else {
                                             setRememberBool(false)
                                         }
-                                        val f = FaceGraphic(
-                                            detectedFaces[0],
-                                            capturedImage.value!!.width,
-                                            size.width
-                                        )
-                                        f.setDrawBool(rememberBool)
-                                        f.draw(drawContext.canvas.nativeCanvas)
+                                        if(selected == "fd"){
+                                            val f = FaceGraphic(
+                                                detectedFaces[0],
+                                                capturedImage.value!!.width,
+                                                capturedImage.value!!.height,
+                                                size.width,
+                                                size.height
+                                            )
+                                            f.setDrawBool(rememberBool)
+                                            f.draw(drawContext.canvas.nativeCanvas)
+                                        }
+
 
                                         if(selected == "md") {
-                                            val g = FaceMeshGraphic(detectedFacesMesh[0], capturedImage.value!!.width,size.width)
+                                            val g = FaceMeshGraphic(
+                                                detectedFacesMesh[0],
+                                                capturedImage.value!!.width,
+                                                capturedImage.value!!.height,
+                                                size.width,
+                                                size.height
+                                            )
                                             g.draw(drawContext.canvas.nativeCanvas)
                                         }
+                                        if (selected == "ss" && detectedSegmentationMask != null) {
+                                            val segmentationGraphic = SegmentationGraphic(
+                                                detectedSegmentationMask!!,
+                                                capturedImage.value!!.width,  // Pass image width
+                                                capturedImage.value!!.height, // Pass image height
+                                                size.width,                   // Pass canvas width
+                                                size.height                   // Pass canvas height
+                                            )
+                                            segmentationGraphic.draw(drawContext.canvas.nativeCanvas)
+
+                                        }
+
+
                                     }
                                 }
                             }
 
 
-                        //live camera
+                            //live camera
                         }else{
                             CameraPreview(
                                 controller = controller,
@@ -186,26 +248,48 @@ class MainActivity : ComponentActivity() {
                     }
 
                     Spacer(modifier = Modifier
-                        .height(50.dp)
+                        .height(10.dp)
                     )
-
-                    Button(
-                        modifier = Modifier
-                            .width(400.dp)
-                            .padding(vertical = 8.dp),
-                        onClick = {
-                            takePhoto(controller = controller, onPhotoTaken = { bitmap ->
-                                capturedImage.value = bitmap
-                            })
-                        },
-                        shape = RoundedCornerShape(1.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xff9910e3),
-                            contentColor = Color.White
-                        )
-                    ){
-                        Text("Take a picture", fontSize = 20.sp)
+                    Row(){
+                        Button(
+                            modifier = Modifier
+                                .width(100.dp)
+                                .padding(vertical = 8.dp),
+                            onClick = {
+                                capturedImage.value = null
+                                detectedFaces = emptyList()
+                                detectedFacesMesh = emptyList()
+                                detectedSegmentationMask = null // Added to reset segmentation mask
+                                setSelected("none")
+                                setRememberBool(false) // Reset the contour detection boolean
+                            },
+                            shape = RoundedCornerShape(1.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Red,
+                                contentColor = Color.White
+                            )
+                        ){
+                            Text("Reset", fontSize = 20.sp)
+                        }
+                        Button(
+                            modifier = Modifier
+                                .width(200.dp)
+                                .padding(vertical = 8.dp),
+                            onClick = {
+                                takePhoto(controller = controller, onPhotoTaken = { bitmap ->
+                                    capturedImage.value = bitmap
+                                })
+                            },
+                            shape = RoundedCornerShape(1.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xff9910e3),
+                                contentColor = Color.White
+                            )
+                        ){
+                            Text("Take a picture", fontSize = 20.sp)
+                        }
                     }
+
                     Spacer(modifier = Modifier
                         .height(10.dp)
                     )

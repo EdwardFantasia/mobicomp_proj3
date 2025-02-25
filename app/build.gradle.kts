@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.project3"
-        minSdk = 27
+        minSdk = 24
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -50,6 +50,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.face.mesh.detection)
+    implementation(libs.play.services.vision.common)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -66,4 +67,7 @@ dependencies {
 
     implementation(libs.mlkit.face.detection)
     implementation(libs.mlkit.segmentation.selfie)
+        // Other dependencies...
+    implementation ("com.google.guava:guava:30.1-android")
+
 }

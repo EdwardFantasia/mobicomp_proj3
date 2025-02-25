@@ -15,7 +15,13 @@ import kotlin.math.max
  * Graphic instance for rendering face position, contour, and landmarks within the associated
  * graphic overlay view.
  */
-class FaceGraphic(private val face: Face, private val imageWidth: Int, private val canvasWidth: Float) {
+class FaceGraphic(
+  private val face: Face,
+  private val imageWidth: Int,
+  private val imageHeight: Int,
+  private val canvasWidth: Float,
+  private val canvasHeight: Float
+) {
   private val facePositionPaint: Paint
   private val numColors = COLORS.size
   private val idPaints = Array(numColors) { Paint() }
@@ -44,17 +50,15 @@ class FaceGraphic(private val face: Face, private val imageWidth: Int, private v
   /** Draws the face annotations for position on the supplied canvas. */
   fun draw(canvas: Canvas) {
     // Draws a circle at the position of the detected face, with the face's track id below.
-
-    // Draws a circle at the position of the detected face, with the face's track id below.
     val x = translateX(face.boundingBox.centerX().toFloat())
     val y = translateY(face.boundingBox.centerY().toFloat())
     canvas.drawCircle(x, y, FACE_POSITION_RADIUS, facePositionPaint)
 
     // Calculate positions.
-    val left = x - scale(face.boundingBox.width() / 2.0f)
-    val top = y - scale(face.boundingBox.height() / 2.0f)
-    val right = x + scale(face.boundingBox.width() / 2.0f)
-    val bottom = y + scale(face.boundingBox.height() / 2.0f)
+    val left = x - scaleX(face.boundingBox.width() / 2.0f)
+    val top = y - scaleY(face.boundingBox.height() / 2.0f)
+    val right = x + scaleX(face.boundingBox.width() / 2.0f)
+    val bottom = y + scaleY(face.boundingBox.height() / 2.0f)
     val lineHeight = ID_TEXT_SIZE + BOX_STROKE_WIDTH
     var yLabelOffset: Float = if (face.trackingId == null) 0f else -lineHeight
 
@@ -133,7 +137,7 @@ class FaceGraphic(private val face: Face, private val imageWidth: Int, private v
     }
 
     // Draws all face contours.
-    if(drawBoolean == true) {
+    if (drawBoolean == true) {
       for (contour in face.allContours) {
         for (point in contour.points) {
           canvas.drawCircle(
@@ -219,7 +223,7 @@ class FaceGraphic(private val face: Face, private val imageWidth: Int, private v
     yLabelOffset += lineHeight
     canvas.drawText("EulerZ: " + face.headEulerAngleZ, left, top + yLabelOffset, idPaints[colorID])
 
-    if(drawBoolean == true){
+    if (drawBoolean == true) {
       // Draw facial landmarks
       drawFaceLandmark(canvas, FaceLandmark.LEFT_EYE)
       drawFaceLandmark(canvas, FaceLandmark.RIGHT_EYE)
@@ -228,7 +232,7 @@ class FaceGraphic(private val face: Face, private val imageWidth: Int, private v
     }
   }
 
-  public fun setDrawBool(boolean: Boolean): Unit{
+  public fun setDrawBool(boolean: Boolean): Unit {
     drawBoolean = boolean
   }
 
@@ -245,23 +249,27 @@ class FaceGraphic(private val face: Face, private val imageWidth: Int, private v
   }
 
   // 1. Scale function - Adjusts the size from image to view coordinates.
-  private fun scale(value: Float): Float {
+  private fun scaleX(value: Float): Float {
     // Scale value relative to the width of the image and the width of the canvas
     return value * (canvasWidth / imageWidth)
+  }
+
+  private fun scaleY(value: Float): Float {
+    // Scale value relative to the height of the image and the height of the canvas
+    return value * (canvasHeight / imageHeight)
   }
 
   // 2. Translate X - Converts the X coordinate from image to canvas.
   private fun translateX(x: Float): Float {
     // Scale the X value based on the canvas size
-    return scale(x)
+    return scaleX(x)
   }
 
   // 3. Translate Y - Converts the Y coordinate from image to canvas.
   private fun translateY(y: Float): Float {
     // Scale the Y value based on the canvas size
-    return scale(y) - 100
+    return scaleY(y)
   }
-
 
   companion object {
     private const val FACE_POSITION_RADIUS = 8.0f
